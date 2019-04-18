@@ -71,6 +71,7 @@ public class ConfigStateRep implements Serializable {
         repositoryLock.lock();
         try {
             configurations.put(hc,configuration);
+            saveConfigs();
             response = "setConfigOK";
         } catch (Exception e) {
             response = "setConfigNOK";
