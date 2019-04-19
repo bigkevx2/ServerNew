@@ -4,9 +4,9 @@ import java.sql.*;
  * Class to connect to the db, implements Runnable for multi threading.
  */
 public class DbConnect implements Runnable{
-    private final String SERVER = "DESKTOP-MSBUMQV";
-    private final String USERNAME = "sa";
-    private final String PASSWORD = "bigkevx216993399";
+    private final String SERVER = "<<server location>>";
+    private final String USERNAME = "<<username>>";
+    private final String PASSWORD = "<<password>>";
     private Connection connection = null;
     private String query;
     private String connectionUrl =
