@@ -26,12 +26,6 @@ public class DbConnect implements Runnable{
         this.query = query;
     }
 
-    public ResultSet getConfig() throws SQLException{
-            connection = DriverManager.getConnection(connectionUrl);
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-        return preparedStatement.executeQuery();
-    }
-
     @Override
     public void run() {
         PreparedStatement preparedStatement = null;
@@ -40,13 +34,10 @@ public class DbConnect implements Runnable{
             connection = DriverManager.getConnection(connectionUrl);
             // make the query sql injection save
             preparedStatement = connection.prepareStatement(query);
-            // debug lines
-//            Timestamp threadExecute = new Timestamp(System.currentTimeMillis());
-//            System.out.println("threadExecute:   " + threadExecute);
             // Loaded? check! target in site? check! FIRE!!!
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            System.out.println("Er ging iets fout met het maken van de connection " + e);
+            System.out.println("Er ging iets fout met het maken van de connection: " + e);
             // close the db connection, clean up time
         } finally {
             if (preparedStatement != null) {
@@ -62,8 +53,5 @@ public class DbConnect implements Runnable{
                 System.out.println("Fout bij sluiten connection: " + e);
             }
         }
-        // Debug lines
-//        Timestamp threadEnd = new Timestamp(System.currentTimeMillis());
-//        System.out.println("thread klaar met db query: " + threadEnd);
     }
 }

@@ -18,13 +18,13 @@ class Server {
         try {
             letClientsConnect();
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println("Exception in Server constructor: " + e);
         }
     }
 
     /**
      * Infinite method for listening and accepting client connections
-     * @throws IOException
+     * @throws IOException, exception catched in constructor.
      */
     private void letClientsConnect() throws IOException {
 
@@ -36,7 +36,6 @@ class Server {
 
         while (true) {
             Socket socket = server.accept();
-//            System.out.println("Client connected: " + socket.getRemoteSocketAddress() + "\n");
             Scanner scannerIn = new Scanner (socket.getInputStream());
             PrintWriter printWriterOut = new PrintWriter(socket.getOutputStream());
 
@@ -46,7 +45,6 @@ class Server {
             boolean response = true;
             while (response) {
                 client_id = scannerIn.nextLine();
-//                System.out.println("Client " + client_id + " connected: " + socket.getRemoteSocketAddress() + "\n");
                 response = false;
                 client = new Client(connectedClients, client_id, scannerIn, printWriterOut);
                 connectedClients.addClient(client);

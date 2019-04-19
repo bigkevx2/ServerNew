@@ -9,8 +9,6 @@ public class Client implements Runnable {
     private PrintWriter outClient;
     private DbRep db = DbRep.getDbRepInstance();
     private ConfigStateRep configStateRep = ConfigStateRep.getConfigStateRep();
-    private Timestamp timeIn;
-    private String[] splitCommandString;
 
     /**
      * Constructor for making Client objects
@@ -32,21 +30,21 @@ public class Client implements Runnable {
     public void run() {
         try {
             doService();
-        } catch (IOException e) {
-            System.out.println(e);
+        } catch (Exception e) {
+            System.out.println("IOException in run: " + e);
         } finally {
             // when a tread terminates (willingly or unwillingly) the finally block makes sure
             // the client is removed from the connectedClients array.
             connectedClients.deleteClient(client_id);
-//            System.out.println("Client " + client_id + " removed from connected clients");
         }
     }
 
     /**
      * listens for traffic from a particular client and determines the action requested from this client.
-     * @throws IOException, necessary for the finally block in run()
      */
-    private void doService() throws IOException {
+    private void doService() {
+        Timestamp timeIn;
+        String[] splitCommandString;
         // doService always needs to run for listening for request for this particular client
         while (true) {
             if (inClient == null) {return;}
@@ -66,7 +64,6 @@ public class Client implements Runnable {
                 // check to see the array has the correct length.
                 // String should look like this: par1;par2;par3;par4
                 if (splitCommandString.length == 4) {
-                    //TODO, implement switch and determine correct method according to protocol used
                     System.out.println("command received by server: " + splitCommandString[0]);
                     switch (splitCommandString[0]) {
                         case "setHc":
@@ -74,19 +71,18 @@ public class Client implements Runnable {
                             executeCommand(splitCommandString[0], splitCommandString[2], splitCommandString[3]);
                             break;
                         case "setState":
-                            //TODO: method to write to file
+                            sendServerResponse(configStateRep.setState(splitCommandString[2],splitCommandString[3]));
                             break;
                         case "getState":
-                            //TODO: method to read from file
+                            sendServerResponse(configStateRep.getState(splitCommandString[2]));
                             break;
                         case "setConfig":
-                            outClient.println(configStateRep.setConfiguration(splitCommandString[2],splitCommandString[3]));
-                            outClient.flush();
+                            sendServerResponse(configStateRep.setConfiguration(splitCommandString[2],splitCommandString[3]));
                             break;
                         case "getConfig":
-                            outClient.println(configStateRep.getConfiguration(splitCommandString[2]));
-                            outClient.flush();
+                            sendServerResponse(configStateRep.getConfiguration(splitCommandString[2]));
                             break;
+                        //TODO: build GUI? or make more complex.
                         case "quit":
                             configStateRep.saveConfigs();
                             configStateRep.saveStates();
@@ -95,6 +91,10 @@ public class Client implements Runnable {
                         default:
                             incorrectProtocol();
                     }
+                    // Set the 'outgoing from server' time for Db
+                    Timestamp timeOut = new Timestamp(System.currentTimeMillis());
+                    // Log server activity to db
+                    db.addLog(timeIn,timeOut, client_id, splitCommandString[2], splitCommandString[0], splitCommandString[3]);
                 } else {
                     incorrectProtocol();
                     // If connection fails also log server activity to db
@@ -109,7 +109,15 @@ public class Client implements Runnable {
      */
     private void incorrectProtocol() {
         System.out.println("Terminating connection with client, not the correct protocol used.");
-        outClient.println("Incorrect Protocol!: Not the correct protocol used.");
+        sendServerResponse("Error: not conform to protocol.");
+    }
+
+    /**
+     * If the response is not from a HC but from the server itself use this method to send the response to the requesting client.
+     * @param response, String with the response.
+     */
+    private void sendServerResponse(String response) {
+        outClient.println(response);
         outClient.flush();
     }
 
@@ -119,17 +127,11 @@ public class Client implements Runnable {
      * @param request the request
      */
     private void executeCommand(String request, String requestTo, String message) {
-        // Set the 'outgoing from server' time for Db
-        Timestamp timeOut = new Timestamp(System.currentTimeMillis());
-        // Log server activity to db
-        db.addLog(timeIn,timeOut, client_id, splitCommandString[2], splitCommandString[0], splitCommandString[3]);
         // get the correct Client instance with the correct streams to reach the correct client
         Client connectedClient = connectedClients.getClient(requestTo);
         if (connectedClient != null) {
             connectedClient.outClient.println(request + ";" + client_id + ";" + message);
             connectedClient.outClient.flush();
-//            System.out.println("Server sends command: " + request + " to client: " + requestTo
-//                    + "\n");
         } else {
             // else the server will always respond with 'no connection' so the GA will always get a response
             outClient.println("No connection with HC");

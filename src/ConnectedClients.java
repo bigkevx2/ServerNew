@@ -34,11 +34,8 @@ class ConnectedClients {
         connectedClientsLock.lock();
         try {
             for (Client client : connectedClients) {
-                // debug line to see what the ArrayList is doing.
-//            System.out.println(connectedClients.size());
                 if (client.getClient_id().equals(client_id)) {
                     connectedClient = client;
-//                System.out.println("requested client " + client_id+ " found");
                 }
             }
         } finally {

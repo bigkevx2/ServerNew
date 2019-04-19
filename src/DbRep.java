@@ -3,6 +3,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -13,7 +15,8 @@ class DbRep {
     // Create an instance of itself
     private static DbRep dbRep = new DbRep();
     private ArrayList<String> logQueries = new ArrayList<>();
-//    private ExecutorService pool = Executors.newFixedThreadPool(1);
+    // db calls handled in threat pool to share resources
+    private ExecutorService pool = Executors.newFixedThreadPool(10);
     // to avoid race conditions with multiple threads
     private Lock repositoryLock = new ReentrantLock();
     // Timer to clean up the repo if server is idle, now set for 3 seconds after last call to addLog
@@ -33,7 +36,7 @@ class DbRep {
      * Private constructor so no other class can instantiate
      */
     private DbRep() {
-        // start  the timer
+        // start the timer
         timer.setRepeats(true);
         timer.start();
     }
@@ -53,7 +56,7 @@ class DbRep {
         try {
             // add a single query to the container
             logQueries.add(query);
-            // if container reaces 1000 logQueries write them to the db
+            // if container reaches 1000 logQueries write them to the db
             if (logQueries.size() == 1000) {
                 writeLogToDb();
             }
@@ -78,31 +81,6 @@ class DbRep {
         addLogQueryToRepo(query);
     }
 
-//    void setConfig(String hc_id, String configOfHc) {
-//        String query = "INSERT INTO dbo.ConfigureState(hc_id, configOfHc, stateOfHc) " +
-//                "VALUES ('" + hc_id + "','" + configOfHc + "','Not set')";
-//        System.out.println(query);
-//        addLogQueryToRepo(query);
-//    }
-//
-//    void setState(String hc_id, String state) {
-//        String query = "UPDATE ConfigureState SET stateOfHc = '" + state + "' WHERE " +
-//                "hc_id = '" + hc_id  + "' AND log_ID = (SELECT MAX(log_ID) FROM ConfigureState WHERE hc_id = '" + hc_id  + "')";
-//        addLogQueryToRepo(query);
-//    }
-//
-//    public String getConfig(String hc_id) throws SQLException {
-//        String result = "getConfig;" + hc_id + ";NO config found";
-//        String query = "SELECT * FROM ConfigureState WHERE hc_id = '" + hc_id  + "' AND log_ID = " +
-//                "(SELECT MAX(log_ID) FROM ConfigureState WHERE hc_id = '" + hc_id  + "') ";
-//        DbConnect dbConnect = new DbConnect(query);
-//        ResultSet resultSet = dbConnect.getConfig();
-//            while (resultSet.next()) {
-//                result = resultSet.getString(3);
-//            }
-//        return result;
-//    }
-
     private void writeLogToDb() {
         // using a StringBuilder because it's more efficient than String +=
         StringBuilder buildQuery = new StringBuilder();
@@ -116,16 +94,6 @@ class DbRep {
         String query = buildQuery.toString();
         // Start an instance of dbConnect to connect to the db
         DbConnect dbConnect = new DbConnect(query);
-//        Timestamp startThread = new Timestamp(System.currentTimeMillis());
-//        System.out.println("Starting thread: " + startThread);
-                // Using a thread pool cost more time to write to db, advantage is that logQueries are executed in order.
-                // When using seperate threads we gain time advantage but logQueries are executed more or less randomly
-                // by sorting on timestamp this disadvantage is no longer an issue.
-//                pool.execute(dbConnect);
-//                Timestamp endThread = new Timestamp(System.currentTimeMillis());
-//                System.out.println("After p.execute: " + endThread);
-        // Each dbConnect runs in it's own thread
-        Thread t = new Thread(dbConnect);
-        t.start();
+        pool.execute(dbConnect);
     }
 }

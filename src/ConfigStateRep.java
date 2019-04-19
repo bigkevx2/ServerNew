@@ -1,4 +1,3 @@
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -13,23 +12,29 @@ public class ConfigStateRep implements Serializable {
     private Map<String, String> configurations;
     // the state repository
     private Map<String, String> states;
+    // thread locking
     private Lock repositoryLock = new ReentrantLock();
-    private
-    ReadWriteToFile readWriteToFile = new ReadWriteToFile();
+    // instance of object to read and write to file
+    private ReadWriteToFile readWriteToFile = new ReadWriteToFile();
+    private final String CONFIG_FILE = "configurations.dat";
+    private final String STATE_FILE = "states.dat";
 
     /**
      * private constructor so no other object can instantiate.
      * While constructing this Singleton read configurations and states from file or create them if no file present.
+     * If no file is present a new HashMap repository will be created.
      */
     private ConfigStateRep() {
         try {
-            configurations = readWriteToFile.readFromFile("configurations.dat");
+            // if a file exists it will be read into the configurations hashMap
+            configurations = readWriteToFile.readFromFile(CONFIG_FILE);
 
         } catch (IOException | ClassNotFoundException ex) {
+            // else a new one will be created
             configurations = new HashMap<>();
         }
         try {
-            states = readWriteToFile.readFromFile("states.dat");
+            states = readWriteToFile.readFromFile(STATE_FILE);
 
         } catch (IOException | ClassNotFoundException ex) {
             states = new HashMap<>();
@@ -46,6 +51,7 @@ public class ConfigStateRep implements Serializable {
 
     /**
      * Method to get a hc configuration from the repository
+     * Uses thread locking
      * @param hc, the hc_id
      * @return String with configuration of hc or NULL
      */
@@ -62,6 +68,7 @@ public class ConfigStateRep implements Serializable {
 
     /**
      * Method to save a hc configuration to the repository
+     * Uses thread locking
      * @param hc, the hc_id
      * @param configuration, the configuration String with parameters.
      * @return confirmation of save
@@ -83,6 +90,7 @@ public class ConfigStateRep implements Serializable {
 
     /**
      * Method to get the state from the repository
+     * Uses thread locking
      * @param hc, the hc_id
      * @return String with the state of the hc or NULL
      */
@@ -91,6 +99,7 @@ public class ConfigStateRep implements Serializable {
         repositoryLock.lock();
         try {
             state = states.get(hc);
+
         } finally {
             repositoryLock.unlock();
         }
@@ -99,23 +108,28 @@ public class ConfigStateRep implements Serializable {
 
     /**
      * Method to save a hc state to the repository
+     * Uses thread locking
      * @param hc, the hc_id
      * @param state, the state String with parameters.
      * @return confirmation of save
      */
     public String setState(String hc, String state) {
+        String response;
         repositoryLock.lock();
         try {
             states.put(hc,state);
+            response = "setStateOK";
+        } catch (Exception e) {
+            response = "setStateNOK";
         } finally {
             repositoryLock.unlock();
         }
-        return "setStateOK";
+        return response;
     }
 
     public void saveConfigs() {
         try {
-            readWriteToFile.writeToFile(configurations, "configurations.dat");
+            readWriteToFile.writeToFile(configurations, CONFIG_FILE);
         } catch (IOException e) {
             System.out.println("saveConfigs gaat fout: " + e);
         }
@@ -123,25 +137,9 @@ public class ConfigStateRep implements Serializable {
 
     public void saveStates() {
         try {
-            readWriteToFile.writeToFile(states, "states.dat");
+            readWriteToFile.writeToFile(states, STATE_FILE);
         } catch (IOException e) {
             System.out.println("saveStates gaat fout: " + e);
         }
-    }
-
-    public Map getConfigurations() {
-        return this.configurations;
-    }
-
-    public void setConfigurations(Map<String, String> configReppository) {
-        this.configurations = configReppository;
-    }
-
-    public Map getStates() {
-        return this.states;
-    }
-
-    public void setStates(Map<String, String> stateRepository) {
-        this.states = stateRepository;
     }
 }
