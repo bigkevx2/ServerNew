@@ -9,6 +9,7 @@ public class Client implements Runnable {
     private PrintWriter outClient;
     private DbRep db = DbRep.getDbRepInstance();
     private ConfigStateRep configStateRep = ConfigStateRep.getConfigStateRep();
+    private ScreenLogRep screenLogRep = ScreenLogRep.getScreenLogRep();
 
     /**
      * Constructor for making Client objects
@@ -31,6 +32,7 @@ public class Client implements Runnable {
         try {
             doService();
         } catch (Exception e) {
+            screenLogRep.setConsoleAreaText("IO_EXCEPTION in run: " + e);
             System.out.println("IOException in run: " + e);
         } finally {
             // when a tread terminates (willingly or unwillingly) the finally block makes sure
@@ -58,7 +60,8 @@ public class Client implements Runnable {
                 timeIn = new Timestamp(System.currentTimeMillis());
                 // debug line to see what instance is handling input
 //                System.out.println("Server receives from client: " + client_id);
-                System.out.println("Command received from client " + client_id + ": " + command);
+                screenLogRep.setConsoleAreaText("Command received from client " + client_id + ": " + command);
+//                System.out.println("Command received from client " + client_id + ": " + command);
                 // split the command string up in multiple parts to use as parameters in executeCommand
                 splitCommandString = command.split(";", 0);
                 // check to see the array has the correct length.

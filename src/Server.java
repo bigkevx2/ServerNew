@@ -10,15 +10,19 @@ import java.util.Scanner;
      */
 class Server {
     private ConnectedClients connectedClients = new ConnectedClients();
+    // Object to log server activity to the server home screen
+    private ScreenLogRep screenLogRep = ScreenLogRep.getScreenLogRep();
 
     /**
      * Constructor to get the ball rolling
      */
     Server() {
         try {
+            screenLogRep.setConsoleAreaText("Server started");
             letClientsConnect();
         } catch (IOException e) {
-            System.out.println("Exception in Server constructor: " + e);
+            screenLogRep.setConsoleAreaText("EXCEPTION while setting up a ServerSocket: " + e);
+//            System.out.println("Exception while setting up a ServerSocket: " + e);
         }
     }
 
@@ -32,6 +36,7 @@ class Server {
         String client_id;
         Client client = null;
         ServerSocket server = new ServerSocket(SBAP_PORT);
+        screenLogRep.setConsoleAreaText("Waiting for clients to connect...");
         System.out.println("Waiting for clients to connect...");
 
         while (true) {
@@ -48,6 +53,7 @@ class Server {
                 response = false;
                 client = new Client(connectedClients, client_id, scannerIn, printWriterOut);
                 connectedClients.addClient(client);
+                screenLogRep.setConsoleAreaText("Client: " + client_id + " connected to server");
             }
             Thread t = new Thread(client);
             t.start();
