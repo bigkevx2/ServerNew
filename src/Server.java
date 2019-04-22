@@ -20,10 +20,12 @@ class Server {
         try {
             screenLogRep.setConsoleAreaText("Server started");
             letClientsConnect();
+            System.out.println("in try van constructor server na aanroepen letClientsConnect");
         } catch (IOException e) {
             screenLogRep.setConsoleAreaText("EXCEPTION while setting up a ServerSocket: " + e);
 //            System.out.println("Exception while setting up a ServerSocket: " + e);
         }
+        System.out.println("na try catch constructor server");
     }
 
     /**
@@ -31,7 +33,6 @@ class Server {
      * @throws IOException, exception catched in constructor.
      */
     private void letClientsConnect() throws IOException {
-
         final int SBAP_PORT = 8888;
         String client_id;
         Client client = null;

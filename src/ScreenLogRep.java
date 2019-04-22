@@ -1,6 +1,3 @@
-import java.io.PrintWriter;
-import java.io.StringReader;
-import java.security.PrivateKey;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.locks.Lock;
@@ -14,7 +11,6 @@ public class ScreenLogRep {
     private static ScreenLogRep screenLogRep = new ScreenLogRep();
     private Queue<String> screenLogQue = new LinkedList<>();
     private Lock repositoryLock = new ReentrantLock();
-    private String consoleAreaText;
     private OpeningScreen openingScreen = new OpeningScreen();
 
     /**
@@ -30,12 +26,12 @@ public class ScreenLogRep {
 //TODO: two methods added by dataBinding wizard
     public String getConsoleAreaText() {
         //TODO: moet deze threadlock krijgen?
-        StringBuilder string = new StringBuilder();
-        consoleAreaText = "";
+        StringBuilder textString = new StringBuilder();
+        String consoleAreaText = "";
         for (String text : screenLogQue) {
-            string.append(text);
-            string.append("\n");
-            consoleAreaText = string.toString();
+            textString.append(text);
+            textString.append("\n");
+            consoleAreaText = textString.toString();
         }
         return consoleAreaText;
     }
@@ -49,8 +45,7 @@ public class ScreenLogRep {
         } else {
             screenLogQue.add(timestamp + ": " + consoleAreaText);
         }
-        //TODO deze aanroep zorgt ervoor dat we een OpeningScreen instance moeten maken hier, dit veroorzaakt waarschijnlijk het probleem
-        // als we de server creeeren als we dit via de button action listener starten.
+        // To be able to log activity to the openingScreen we need this line.
         openingScreen.setData(this);
     }
 }
